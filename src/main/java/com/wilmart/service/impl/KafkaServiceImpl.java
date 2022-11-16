@@ -59,7 +59,9 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String update(Object obj) throws JsonProcessingException {
-        UserDTO dto = objectMapper.convertValue(obj, UserDTO.class);
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String json = (String) consumerRecord.value();
+        UserDTO dto = objectMapper.readValue(json, UserDTO.class);
         UserDTO newDto = userService.update(dto);
         String jsonDto = getAllUser();
         return jsonDto;
@@ -69,8 +71,9 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String delete(Object obj) throws JsonProcessingException {
-        Integer userId = (Integer) obj;
-        Boolean result = userService.delete(userId);
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String userId = (String) consumerRecord.value();
+        Boolean result = userService.delete(Integer.valueOf(userId));
         String jsonDto = getAllUser();
         return jsonDto;
     }
@@ -79,7 +82,8 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String findUserById(Object obj) throws JsonProcessingException {
-        String userId = (String) obj;
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String userId = (String) consumerRecord.value();
         UserDTO newDto = userService.getUser(userId);
         String jsonDto = objectMapper.writeValueAsString(newDto);
         return jsonDto;
@@ -89,7 +93,8 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String findUserByFullName(Object obj) throws JsonProcessingException {
-        String fullName = (String) obj;
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String fullName = (String) consumerRecord.value();
         List<UserDTO> list = userService.findUserByFullName(fullName);
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(list);
         return json;
@@ -99,7 +104,8 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String findUserByEmail(Object obj) throws JsonProcessingException {
-        String email = (String) obj;
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String email = (String) consumerRecord.value();
         List<UserDTO> list = userService.findUserByEmail(email);
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(list);
         return json;
@@ -109,7 +115,8 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String findUserByDepartment(Object obj) throws JsonProcessingException {
-        String department = (String) obj;
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String department = (String) consumerRecord.value();
         List<UserDTO> list = userService.findUserByDepartment(department);
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(list);
         return json;
@@ -119,7 +126,8 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String findUserByGender(Object obj) throws JsonProcessingException {
-        String gender = (String) obj;
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String gender = (String) consumerRecord.value();
         List<UserDTO> list = userService.findUserByGender(gender);
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(list);
         return json;
