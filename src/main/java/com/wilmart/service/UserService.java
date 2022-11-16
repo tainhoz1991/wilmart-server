@@ -1,11 +1,12 @@
 package com.wilmart.service;
 
+import com.wilmart.dto.UserBaseDTO;
 import com.wilmart.dto.UserDTO;
 
 import java.util.List;
 
 public interface UserService {
-    UserDTO create(UserDTO dto);
+    UserDTO create(UserBaseDTO dto);
 
     List<UserDTO> getListUsers();
 
@@ -13,7 +14,7 @@ public interface UserService {
 
     UserDTO getUser(String id);
 
-    boolean delete(UserDTO dto);
+    boolean delete(Integer id);
 
     List<UserDTO> findUserByFullName(String fullName);
 
@@ -23,5 +24,6 @@ public interface UserService {
 
     List<UserDTO> findUserByEmail(String email);
 
-    UserDTO findUserById(Integer id);
+    void evictAllCaches();
+
 }

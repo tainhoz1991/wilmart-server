@@ -2,9 +2,11 @@ package com.wilmart.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wilmart.dto.UserBaseDTO;
 import com.wilmart.dto.UserDTO;
 import com.wilmart.service.KafkaService;
 import com.wilmart.service.UserService;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +47,11 @@ public class KafkaServiceImpl implements KafkaService {
     @SendTo
     @Override
     public String create(Object obj) throws JsonProcessingException {
-        UserDTO dto = objectMapper.convertValue(obj, UserDTO.class);
+        ConsumerRecord<String, Object> consumerRecord = (ConsumerRecord<String, Object>) obj;
+        String json = (String) consumerRecord.value();
+        UserBaseDTO dto = objectMapper.readValue(json, UserBaseDTO.class);
         UserDTO newDto = userService.create(dto);
-        String jsonDto = objectMapper.writeValueAsString(newDto);
+        String jsonDto = getAllUser();
         return jsonDto;
     }
 
@@ -57,25 +61,26 @@ public class KafkaServiceImpl implements KafkaService {
     public String update(Object obj) throws JsonProcessingException {
         UserDTO dto = objectMapper.convertValue(obj, UserDTO.class);
         UserDTO newDto = userService.update(dto);
-        String jsonDto = objectMapper.writeValueAsString(newDto);
+        String jsonDto = getAllUser();
         return jsonDto;
     }
 
     @KafkaListener(topics = "delete_user")
     @SendTo
     @Override
-    public Boolean delete(Object obj) {
-        UserDTO dto = objectMapper.convertValue(obj, UserDTO.class);
-        Boolean result = userService.delete(dto);
-        return result;
+    public String delete(Object obj) throws JsonProcessingException {
+        Integer userId = (Integer) obj;
+        Boolean result = userService.delete(userId);
+        String jsonDto = getAllUser();
+        return jsonDto;
     }
 
     @KafkaListener(topics = "get_info_user")
     @SendTo
     @Override
     public String findUserById(Object obj) throws JsonProcessingException {
-        Integer userId = (Integer) obj;
-        UserDTO newDto = userService.findUserById(userId);
+        String userId = (String) obj;
+        UserDTO newDto = userService.getUser(userId);
         String jsonDto = objectMapper.writeValueAsString(newDto);
         return jsonDto;
     }

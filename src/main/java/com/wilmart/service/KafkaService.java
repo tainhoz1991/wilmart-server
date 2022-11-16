@@ -13,7 +13,7 @@ public interface KafkaService {
 
     String update(Object obj) throws JsonProcessingException;
 
-    Boolean delete(Object obj);
+    String delete(Object obj) throws JsonProcessingException;
 
     String findUserById(Object obj) throws JsonProcessingException;
 

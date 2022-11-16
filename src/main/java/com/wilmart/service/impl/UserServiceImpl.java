@@ -1,16 +1,19 @@
 package com.wilmart.service.impl;
 
+import com.wilmart.dto.UserBaseDTO;
 import com.wilmart.dto.UserDTO;
 import com.wilmart.entity.User;
 import com.wilmart.repository.UserRepository;
 import com.wilmart.service.UserService;
 import com.wilmart.service.mapstruct.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,24 +25,34 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private CacheManager cacheManager;
 
     @Override
-    public UserDTO create(UserDTO dto) {
+    public UserDTO create(UserBaseDTO dto) {
         if (Objects.isNull(dto)){
             return null;
         }
-        User entity = userRepository.save(userMapper.toEntity(dto));
+        UserDTO userDTO = new UserDTO();
+        userDTO.setDepartment(dto.getDepartment());
+        userDTO.setGender(dto.getGender());
+        userDTO.setEmail(dto.getEmail());
+        userDTO.setFullName(dto.getFullName());
+        userDTO.setMobilePhone(dto.getMobilePhone());
+        User entity = userRepository.save(userMapper.toEntity(userDTO));
+//        evictAllCaches();
         return userMapper.toDto(entity);
     }
 
-    @Cacheable(value = "users")
+//    @Cacheable(cacheNames = "User")
     @Override
     public List<UserDTO> getListUsers() {
         List<User> userList = userRepository.findAll();
+//        userList.stream().forEach(user -> cacheManager.getCache("User").put(user.getId(), user));
         return userMapper.toDto(userList);
     }
 
-    @CachePut(value = "User", key = "#userId")
+    @CachePut(cacheNames = "User", key = "#dto.id")
     @Override
     public UserDTO update(UserDTO dto) {
         if (Objects.isNull(dto)){
@@ -59,7 +72,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(newEntity);
     }
 
-    @Cacheable(value = "User", key = "#userId")
+    @Cacheable(cacheNames = "User", key = "#id")
     @Override
     public UserDTO getUser(String id) {
         Optional<User> userOpt = userRepository.findById(Integer.valueOf(id));
@@ -68,13 +81,15 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(user);
     }
 
-    @CacheEvict(value = "User", key = "#userId")
+    @CacheEvict(cacheNames = "User", key = "#id")
     @Override
-    public boolean delete(UserDTO dto) {
-        userRepository.delete(userMapper.toEntity(dto));
-        Optional<User> user = userRepository.findById(dto.getId());
+    public boolean delete(Integer id) {
+        Optional<User> userOpt = userRepository.findById(Integer.valueOf(id));
+        User user = Objects.isNull(userOpt) ? null : userOpt.get();
+        userRepository.delete(user);
+        Optional<User> useCheck = userRepository.findById(Integer.valueOf(id));
 
-        return Objects.isNull(user);
+        return useCheck.isEmpty();
     }
 
     @Override
@@ -105,11 +120,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(userList);
     }
 
-    @Cacheable(value = "User")
-    @Override
-    public UserDTO findUserById(Integer id) {
-        Optional<User> uerOpt = userRepository.findById(id);
-        User user = Objects.isNull(uerOpt) ? null : uerOpt.get();
-        return userMapper.toDto(user);
+    public void evictAllCaches() {
+        cacheManager.getCache("User").clear();
     }
 }
